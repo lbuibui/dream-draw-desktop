@@ -83,6 +83,11 @@ async fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Str
     Ok(())
 }
 
+// ==================== API Key 安全存储 ====================
+
+const KEYRING_SERVICE: &str = "com.dreamdraw.app";
+const KEYRING_USERNAME: &str = "gemini_api_key";
+
 // API Key 安全验证
 fn validate_api_key(api_key: &str) -> Result<(), String> {
     let trimmed = api_key.trim();
@@ -109,62 +114,114 @@ fn validate_api_key(api_key: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// 使用系统密钥库安全存储 API Key
 #[tauri::command]
-async fn save_api_key(app: tauri::AppHandle, apiKey: String) -> Result<(), String> {
-    println!("[save_api_key] 开始保存 API Key...");
+async fn save_api_key_secure(api_key: String) -> Result<(), String> {
+    println!("[save_api_key_secure] 开始保存 API Key...");
     
     // 安全验证
-    validate_api_key(&apiKey)?;
-    println!("[save_api_key] 验证通过");
+    validate_api_key(&api_key)?;
+    println!("[save_api_key_secure] 验证通过");
     
-    use tauri_plugin_store::StoreExt;
-    println!("[save_api_key] 正在打开 store...");
+    // 使用 keyring 存储到系统密钥库
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USERNAME)
+        .map_err(|e| format!("创建密钥库条目失败: {}", e))?;
     
-    let store = app
-        .store_builder("secrets.json")
-        .build()
-        .map_err(|e| {
-            println!("[save_api_key] 打开存储失败: {}", e);
-            format!("打开存储失败: {}", e)
-        })?;
+    entry.set_password(&api_key.trim())
+        .map_err(|e| format!("保存 API Key 到系统密钥库失败: {}", e))?;
     
-    println!("[save_api_key] store 已打开，正在设置值...");
-    store.set("gemini_api_key", apiKey.trim());
-    
-    println!("[save_api_key] 正在保存...");
-    store.save().map_err(|e| {
-        println!("[save_api_key] 保存失败: {}", e);
-        format!("保存 API Key 失败: {}", e)
-    })?;
-    
-    println!("[save_api_key] 保存成功！");
+    println!("[save_api_key_secure] 已保存到系统密钥库");
     Ok(())
 }
 
+/// 从系统密钥库读取 API Key
 #[tauri::command]
-async fn getApiKey(app: tauri::AppHandle) -> Result<Option<String>, String> {
-    println!("[getApiKey] 正在读取 API Key...");
+async fn get_api_key_secure() -> Result<Option<String>, String> {
+    println!("[get_api_key_secure] 正在从系统密钥库读取 API Key...");
     
-    use tauri_plugin_store::StoreExt;
-    let store = app
-        .store_builder("secrets.json")
-        .build()
-        .map_err(|e| {
-            println!("[getApiKey] 打开存储失败: {}", e);
-            format!("打开存储失败: {}", e)
-        })?;
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USERNAME)
+        .map_err(|e| format!("创建密钥库条目失败: {}", e))?;
     
-    let api_key = store
-        .get("gemini_api_key")
-        .and_then(|v| v.as_str().map(|s| s.to_string()));
+    match entry.get_password() {
+        Ok(password) => {
+            println!("[get_api_key_secure] 读取成功");
+            Ok(Some(password))
+        }
+        Err(keyring::Error::NoEntry) => {
+            println!("[get_api_key_secure] 未找到 API Key");
+            Ok(None)
+        }
+        Err(e) => {
+            println!("[get_api_key_secure] 读取失败: {}", e);
+            Err(format!("读取 API Key 失败: {}", e))
+        }
+    }
+}
+
+/// 从系统密钥库删除 API Key
+#[tauri::command]
+async fn clear_api_key_secure() -> Result<(), String> {
+    println!("[clear_api_key_secure] 正在清除 API Key...");
     
-    println!("[getApiKey] 读取结果: {}", if api_key.is_some() { "有值" } else { "无值" });
-    Ok(api_key)
+    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USERNAME)
+        .map_err(|e| format!("创建密钥库条目失败: {}", e))?;
+    
+    entry.delete_credential()
+        .map_err(|e| format!("清除 API Key 失败: {}", e))?;
+    
+    println!("[clear_api_key_secure] 清除成功");
+    Ok(())
+}
+
+// 兼容旧版本的 API (使用文件存储作为降级方案)
+#[tauri::command]
+async fn save_api_key(app: tauri::AppHandle, api_key: String) -> Result<(), String> {
+    // 优先尝试使用系统密钥库
+    match save_api_key_secure(api_key.clone()).await {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            // 降级到文件存储
+            println!("[save_api_key] 降级到文件存储");
+            use tauri_plugin_store::StoreExt;
+            validate_api_key(&api_key)?;
+            let store = app
+                .store_builder("secrets.json")
+                .build()
+                .map_err(|e| format!("打开存储失败: {}", e))?;
+            store.set("gemini_api_key", api_key.trim());
+            store.save().map_err(|e| format!("保存 API Key 失败: {}", e))?;
+            Ok(())
+        }
+    }
 }
 
 #[tauri::command]
-async fn clearApiKey(app: tauri::AppHandle) -> Result<(), String> {
-    println!("[clearApiKey] 正在清除 API Key...");
+async fn get_api_key(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    // 优先尝试从系统密钥库读取
+    match get_api_key_secure().await {
+        Ok(Some(key)) => Ok(Some(key)),
+        Ok(None) | Err(_) => {
+            // 降级到文件存储
+            println!("[get_api_key] 降级到文件存储读取");
+            use tauri_plugin_store::StoreExt;
+            let store = app
+                .store_builder("secrets.json")
+                .build()
+                .map_err(|e| format!("打开存储失败: {}", e))?;
+            let api_key = store
+                .get("gemini_api_key")
+                .and_then(|v| v.as_str().map(|s| s.to_string()));
+            Ok(api_key)
+        }
+    }
+}
+
+#[tauri::command]
+async fn clear_api_key(app: tauri::AppHandle) -> Result<(), String> {
+    // 尝试清除系统密钥库
+    let _ = clear_api_key_secure().await;
+    
+    // 同时清除文件存储
     use tauri_plugin_store::StoreExt;
     let store = app
         .store_builder("secrets.json")
@@ -172,9 +229,10 @@ async fn clearApiKey(app: tauri::AppHandle) -> Result<(), String> {
         .map_err(|e| format!("打开存储失败: {}", e))?;
     store.delete("gemini_api_key");
     store.save().map_err(|e| format!("清除 API Key 失败: {}", e))?;
-    println!("[clearApiKey] 清除成功");
     Ok(())
 }
+
+// ==================== Gemini API 调用 ====================
 
 use std::time::Duration;
 
@@ -182,11 +240,11 @@ const SYSTEM_PROMPT: &str = "你是一个专业的图像修复专家。";
 
 #[tauri::command]
 async fn call_gemini_api(
-    apiKey: String,
-    base64Image: String,
+    api_key: String,
+    base64_image: String,
     prompt: String,
-    imageSize: String,
-    aspectRatio: String,
+    image_size: String,
+    aspect_ratio: String,
 ) -> Result<String, String> {
     // 设置 180 秒超时，图像生成可能需要较长时间
     let client = reqwest::Client::builder()
@@ -197,11 +255,11 @@ async fn call_gemini_api(
     // 使用 gemini-3.1-flash-image-preview 模型
     let url = format!(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key={}",
-        apiKey
+        api_key
     );
 
     // 清理 base64 数据，移除 data URL 前缀
-    let clean_base64 = base64Image
+    let clean_base64 = base64_image
         .replace("data:image/png;base64,", "")
         .replace("data:image/jpeg;base64,", "")
         .replace("data:image/webp;base64,", "");
@@ -253,6 +311,8 @@ async fn call_gemini_api(
     Ok(text)
 }
 
+// ==================== 应用信息 ====================
+
 #[tauri::command]
 fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -281,9 +341,14 @@ pub fn run() {
             save_file_bytes,
             load_config,
             save_config,
+            // API Key 管理 (新版本使用系统密钥库)
+            save_api_key_secure,
+            get_api_key_secure,
+            clear_api_key_secure,
+            // 兼容旧版本
             save_api_key,
-            getApiKey,
-            clearApiKey,
+            get_api_key,
+            clear_api_key,
             call_gemini_api,
             get_app_version,
             get_app_name,

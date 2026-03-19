@@ -33,5 +33,44 @@ export default defineConfig(async () => ({
     minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
     // produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
+    // 代码分包优化
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // PDF 处理相关
+          'pdf-worker': ['pdfjs-dist'],
+          // 导出功能相关
+          'export': ['jspdf', 'pptxgenjs', 'jszip'],
+          // UI 组件相关
+          'ui': ['framer-motion', 'lucide-react'],
+          // AI 服务
+          'ai': ['@google/genai'],
+        },
+        // 确保 chunk 文件名稳定
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name || '';
+          if (info.endsWith('.css')) {
+            return 'assets/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
+      },
+    },
+    // 限制 chunk 大小警告
+    chunkSizeWarningLimit: 1000,
+  },
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@tauri-apps/api',
+    ],
+    exclude: [
+      // 大型库按需加载
+      'pdfjs-dist',
+    ],
   },
 }));

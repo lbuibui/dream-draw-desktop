@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "DreamDraw",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "identifier": "com.dreamdraw.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -41,7 +41,7 @@
       "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "AI 图像修复工具",
-    "longDescription": "专为修复 PDF 文档和信息图中的文字模糊与伪影问题而设计的 AI 工具"
+    "shortDescription": "AI Image Restoration Tool",
+    "longDescription": "An AI tool designed for fixing blurry text and artifacts in PDF documents and infographics."
   }
 }

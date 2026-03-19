@@ -1,6 +1,6 @@
 [package]
 name = "dream-draw-desktop"
-version = "2.3.0"
+version = "2.4.0"
 description = "绘梦 - AI 图像修复工具"
 authors = ["惊蛰"]
 edition = "2021"
@@ -28,6 +28,9 @@ tokio = { version = "1", features = ["full"] }
 # 工具库
 base64 = "0.22"
 regex = "1"
+
+# 安全存储
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 
 [profile.release]
 panic = "abort"

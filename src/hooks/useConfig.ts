@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AppConfig, Language, Theme } from '../types';
-import { loadConfig, saveConfig, getApiKey, saveApiKey, clearApiKey } from '../tauri-api';
+import type { AppConfig, Language, Theme } from '../types';
+import { loadConfig, saveConfig, getApiKeySecure, saveApiKeySecure, clearApiKeySecure } from '../tauri-api';
 
 const DEFAULT_CONFIG: AppConfig = {
   apiKey: null,
@@ -18,7 +18,8 @@ export function useConfig() {
     const init = async () => {
       try {
         const savedConfig = await loadConfig();
-        const savedApiKey = await getApiKey();
+        // 使用安全的 API Key 获取方式
+        const savedApiKey = await getApiKeySecure();
         const mergedConfig: AppConfig = {
           apiKey: savedApiKey,
           resolution: (savedConfig.resolution as '2K' | '4K') || DEFAULT_CONFIG.resolution,
@@ -40,8 +41,8 @@ export function useConfig() {
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
     try {
+      // 只保存非敏感配置
       await saveConfig({
-        apiKey: null, // 不保存 API key 到普通配置
         resolution: newConfig.resolution,
         theme: newConfig.theme,
         language: newConfig.language,
@@ -51,16 +52,16 @@ export function useConfig() {
     }
   }, [config]);
 
-  // 设置 API Key
+  // 设置 API Key (使用安全存储)
   const setApiKey = useCallback(async (apiKey: string | null) => {
     console.log('[useConfig] setApiKey 被调用');
     if (apiKey) {
-      console.log('[useConfig] 正在保存 API Key...');
-      await saveApiKey(apiKey);
+      console.log('[useConfig] 正在保存 API Key 到安全存储...');
+      await saveApiKeySecure(apiKey);
       console.log('[useConfig] API Key 保存完成');
     } else {
       console.log('[useConfig] 正在清除 API Key...');
-      await clearApiKey();
+      await clearApiKeySecure();
       console.log('[useConfig] API Key 清除完成');
     }
     setConfig(prev => ({ ...prev, apiKey }));
@@ -92,7 +93,7 @@ export function useConfig() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [config.theme]);
 
   return {
     config,

@@ -7,9 +7,12 @@
 - **AI 图像修复**: 使用 Google Gemini API 进行超清重绘和文字纠错
 - **PDF 处理**: 支持 PDF 文档逐页提取和修复
 - **多格式导出**: 支持导出为 PDF、PPTX 和 ZIP
-- **本地存储**: API Key 和配置本地安全存储
-- **深色模式**: 支持浅色/深色主题切换
+- **安全存储**: API Key 使用系统密钥库加密存储
+- **深色模式**: 支持浅色/深色主题切换，自适应系统主题
 - **双语支持**: 支持中文/英文界面
+- **快捷键支持**: Ctrl+O(打开)、Ctrl+S(导出)、Ctrl+A(全选)、Ctrl+,(设置)
+- **收藏夹**: 自动保存修复完成的图片，支持批量导出
+- **导出进度**: 大文件导出时显示实时进度
 
 ## 🛠️ 技术栈
 
@@ -18,6 +21,7 @@
 - **AI**: Google Gemini 3.1 Flash Image Preview
 - **PDF**: PDF.js + jsPDF
 - **PPTX**: PptxGenJS
+- **安全**: keyring (系统密钥库)
 
 ## 🚀 快速开始
 
@@ -57,12 +61,22 @@ npm run tauri:build
 ```
 dream-draw-desktop/
 ├── src/                    # 前端代码
+│   ├── components/        # React 组件
+│   │   ├── Header.tsx     # 顶部导航
+│   │   ├── UploadZone.tsx # 上传区域
+│   │   ├── EditorView.tsx # 编辑主界面
+│   │   ├── PageGrid.tsx   # 图片网格
+│   │   └── modals/        # 弹窗组件
+│   │       ├── SettingsModal.tsx
+│   │       ├── FavoritesModal.tsx
+│   │       └── ImagePreviewModal.tsx
 │   ├── hooks/             # React Hooks
+│   ├── contexts/          # React Context
+│   ├── constants/         # 常量定义
 │   ├── utils/             # 工具函数
-│   ├── App.tsx            # 主应用组件
+│   ├── services/          # 服务层
 │   ├── types.ts           # TypeScript 类型
-│   ├── i18n.ts            # 国际化
-│   └── tauri-api.ts       # Tauri API 封装
+│   └── i18n.ts            # 国际化
 ├── src-tauri/             # Rust 后端代码
 │   ├── src/lib.rs         # 主库文件
 │   ├── capabilities/      # 权限配置
@@ -75,10 +89,19 @@ dream-draw-desktop/
 ### API Key
 
 1. 点击右上角设置图标
-2. 输入 Google Gemini API Key (以 `AIza` 开头)
+2. 输入 Google Gemini API Key
 3. 点击保存
 
-> **注意**: API Key 仅存储在本地，不会上传到任何服务器。
+> **注意**: API Key 使用系统密钥库加密存储，不会上传到任何服务器。
+
+### 快捷键
+
+| 快捷键 | 功能 |
+|--------|------|
+| Ctrl+O / ⌘+O | 打开文件 |
+| Ctrl+S / ⌘+S | 导出文件 |
+| Ctrl+A / ⌘+A | 全选 |
+| Ctrl+, / ⌘+, | 打开设置 |
 
 ### 分辨率选项
 
@@ -136,8 +159,8 @@ npm run tauri add <plugin-name>
 
 ```json
 {
-  "productName": "绘梦",
-  "version": "2.3.0",
+  "productName": "DreamDraw",
+  "version": "2.4.0",
   "identifier": "com.dreamdraw.app"
 }
 ```

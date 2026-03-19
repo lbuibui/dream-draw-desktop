@@ -5,12 +5,21 @@ import jsPDF from 'jspdf';
 import PptxGenJS from 'pptxgenjs';
 import JSZip from 'jszip';
 
+export interface ExportProgressCallback {
+  onProgress?: (current: number, total: number, message: string) => void;
+}
+
 // 导出为 PDF
-export async function exportToPdf(pages: ProcessedPage[]): Promise<void> {
+export async function exportToPdf(
+  pages: ProcessedPage[],
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   if (pages.length === 0) return;
 
   const savePath = await selectSavePath('dream-draw-restored', 'pdf');
   if (!savePath) return;
+
+  callbacks?.onProgress?.(0, pages.length, '准备导出 PDF...');
 
   const firstPage = pages[0];
   const isLandscape = firstPage.width > firstPage.height;
@@ -23,6 +32,8 @@ export async function exportToPdf(pages: ProcessedPage[]): Promise<void> {
 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
+    callbacks?.onProgress?.(i + 1, pages.length, `正在处理第 ${i + 1}/${pages.length} 页...`);
+    
     if (page.processedUrl && page.processedData) {
       if (i > 0) {
         pdf.addPage([page.width, page.height], isLandscape ? 'l' : 'p');
@@ -31,25 +42,33 @@ export async function exportToPdf(pages: ProcessedPage[]): Promise<void> {
     }
   }
 
+  callbacks?.onProgress?.(pages.length, pages.length, '正在保存文件...');
   const pdfData = pdf.output('arraybuffer');
   await saveFileBytes(savePath, new Uint8Array(pdfData));
 }
 
 // 导出为 PPTX
-export async function exportToPptx(pages: ProcessedPage[]): Promise<void> {
+export async function exportToPptx(
+  pages: ProcessedPage[],
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   if (pages.length === 0) return;
 
   const savePath = await selectSavePath('dream-draw-restored', 'pptx');
   if (!savePath) return;
 
+  callbacks?.onProgress?.(0, pages.length, '准备导出 PPTX...');
+
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_16x9';
 
-  for (const page of pages) {
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    callbacks?.onProgress?.(i + 1, pages.length, `正在处理第 ${i + 1}/${pages.length} 页...`);
+    
     if (page.processedUrl && page.processedData) {
       const slide = pptx.addSlide();
       
-      // 计算适应幻灯片的尺寸
       const slideWidth = 10;
       const slideHeight = 5.625;
       const aspectRatio = page.width / page.height;
@@ -75,22 +94,31 @@ export async function exportToPptx(pages: ProcessedPage[]): Promise<void> {
     }
   }
 
+  callbacks?.onProgress?.(pages.length, pages.length, '正在保存文件...');
   await pptx.writeFile({ fileName: savePath });
 }
 
 // 导出为 ZIP (图片模式)
-export async function exportToZip(pages: ProcessedPage[], uploadMode: UploadMode): Promise<void> {
+export async function exportToZip(
+  pages: ProcessedPage[],
+  uploadMode: UploadMode,
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   const completedPages = pages.filter(p => p.processedUrl && p.processedData);
   if (completedPages.length === 0) return;
 
   const savePath = await selectSavePath('dream-draw-images', 'zip');
   if (!savePath) return;
 
+  callbacks?.onProgress?.(0, completedPages.length, '准备导出 ZIP...');
+
   const zip = new JSZip();
   const folder = zip.folder('restored-images');
 
   for (let i = 0; i < completedPages.length; i++) {
     const page = completedPages[i];
+    callbacks?.onProgress?.(i + 1, completedPages.length, `正在压缩第 ${i + 1}/${completedPages.length} 张...`);
+    
     if (page.processedData) {
       const binary = atob(page.processedData);
       const bytes = new Uint8Array(binary.length);
@@ -106,6 +134,7 @@ export async function exportToZip(pages: ProcessedPage[], uploadMode: UploadMode
     }
   }
 
+  callbacks?.onProgress?.(completedPages.length, completedPages.length, '正在生成 ZIP 文件...');
   const content = await zip.generateAsync({ type: 'uint8array' });
   await saveFileBytes(savePath, content);
 }
@@ -129,11 +158,16 @@ export async function downloadSingleImage(page: ProcessedPage): Promise<void> {
 // ==================== 收藏夹导出功能 ====================
 
 // 从 FavoriteItem 导出为 PDF
-export async function exportFavoritesToPdf(items: FavoriteItem[]): Promise<void> {
+export async function exportFavoritesToPdf(
+  items: FavoriteItem[],
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   if (items.length === 0) return;
 
   const savePath = await selectSavePath('favorites-export', 'pdf');
   if (!savePath) return;
+
+  callbacks?.onProgress?.(0, items.length, '准备导出收藏...');
 
   const firstItem = items[0];
   const img = new Image();
@@ -152,6 +186,8 @@ export async function exportFavoritesToPdf(items: FavoriteItem[]): Promise<void>
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    callbacks?.onProgress?.(i + 1, items.length, `正在处理第 ${i + 1}/${items.length} 项...`);
+    
     if (i > 0) {
       const itemImg = new Image();
       await new Promise<void>((resolve) => {
@@ -164,21 +200,30 @@ export async function exportFavoritesToPdf(items: FavoriteItem[]): Promise<void>
     pdf.addImage(item.imageData, 'PNG', 0, 0, img.width, img.height);
   }
 
+  callbacks?.onProgress?.(items.length, items.length, '正在保存文件...');
   const pdfData = pdf.output('arraybuffer');
   await saveFileBytes(savePath, new Uint8Array(pdfData));
 }
 
 // 从 FavoriteItem 导出为 PPTX
-export async function exportFavoritesToPptx(items: FavoriteItem[]): Promise<void> {
+export async function exportFavoritesToPptx(
+  items: FavoriteItem[],
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   if (items.length === 0) return;
 
   const savePath = await selectSavePath('favorites-export', 'pptx');
   if (!savePath) return;
 
+  callbacks?.onProgress?.(0, items.length, '准备导出收藏...');
+
   const pptx = new PptxGenJS();
   pptx.layout = 'LAYOUT_16x9';
 
-  for (const item of items) {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    callbacks?.onProgress?.(i + 1, items.length, `正在处理第 ${i + 1}/${items.length} 项...`);
+    
     const img = new Image();
     await new Promise<void>((resolve) => {
       img.onload = () => resolve();
@@ -211,21 +256,29 @@ export async function exportFavoritesToPptx(items: FavoriteItem[]): Promise<void
     });
   }
 
+  callbacks?.onProgress?.(items.length, items.length, '正在保存文件...');
   await pptx.writeFile({ fileName: savePath });
 }
 
 // 从 FavoriteItem 导出为 ZIP
-export async function exportFavoritesToZip(items: FavoriteItem[]): Promise<void> {
+export async function exportFavoritesToZip(
+  items: FavoriteItem[],
+  callbacks?: ExportProgressCallback
+): Promise<void> {
   if (items.length === 0) return;
 
   const savePath = await selectSavePath('favorites-export', 'zip');
   if (!savePath) return;
+
+  callbacks?.onProgress?.(0, items.length, '准备导出收藏...');
 
   const zip = new JSZip();
   const folder = zip.folder('favorites');
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    callbacks?.onProgress?.(i + 1, items.length, `正在压缩第 ${i + 1}/${items.length} 项...`);
+    
     const base64Data = item.imageData.replace(/^data:image\/png;base64,/, '');
     const binary = atob(base64Data);
     const bytes = new Uint8Array(binary.length);
@@ -237,6 +290,7 @@ export async function exportFavoritesToZip(items: FavoriteItem[]): Promise<void>
     folder?.file(fileName, bytes);
   }
 
+  callbacks?.onProgress?.(items.length, items.length, '正在生成 ZIP 文件...');
   const content = await zip.generateAsync({ type: 'uint8array' });
   await saveFileBytes(savePath, content);
 }
