@@ -136,7 +136,7 @@ npm run tauri add <plugin-name>
 
 ```json
 {
-  "productName": "绘梦",
+  "productName": "DreamDraw",
   "version": "2.3.0",
   "identifier": "com.dreamdraw.app"
 }
