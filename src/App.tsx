@@ -195,7 +195,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors overflow-hidden">
       <Header
         language={config.language}
         favoritesCount={favoritesCount}
@@ -203,38 +203,47 @@ function App() {
         onOpenFavorites={handleOpenFavorites}
       />
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {!hasPages ? (
-          <UploadZone
-            language={config.language}
-            isExtracting={isExtracting}
-            onFileSelect={handleFileSelect}
-          />
-        ) : (
-          <EditorView
-            pages={pages}
-            config={config}
-            language={config.language}
-            isProcessing={isProcessing}
-            isStopping={isStopping}
-            progress={progress}
-            completedCount={completedCount}
-            uploadMode={uploadMode}
-            onResolutionChange={(resolution) => updateConfig({ resolution })}
-            onStartProcessing={startProcessing}
-            onStopProcessing={stopProcessing}
-            onExportPdf={handleExportPdf}
-            onExportPptx={handleExportPptx}
-            onExportZip={handleExportZip}
-            onReset={reset}
-            onSelectAll={selectAll}
-            onDeselectAll={deselectAll}
-            onToggleSelection={toggleSelection}
-            onRetry={retryPage}
-            onPreview={setSelectedPageId}
-            onDownload={downloadSingleImage}
-          />
-        )}
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-7xl mx-auto px-4 py-8 min-h-full">
+          {!hasPages ? (
+            <UploadZone
+              language={config.language}
+              isExtracting={isExtracting}
+              onFileSelect={handleFileSelect}
+            />
+          ) : (
+            <EditorView
+              pages={pages}
+              config={config}
+              language={config.language}
+              isProcessing={isProcessing}
+              isStopping={isStopping}
+              progress={progress}
+              completedCount={completedCount}
+              uploadMode={uploadMode}
+              onResolutionChange={(resolution) => updateConfig({ resolution })}
+              onStartProcessing={startProcessing}
+              onStopProcessing={stopProcessing}
+              onExportPdf={handleExportPdf}
+              onExportPptx={handleExportPptx}
+              onExportZip={handleExportZip}
+              onReset={reset}
+              onSelectAll={selectAll}
+              onDeselectAll={deselectAll}
+              onToggleSelection={toggleSelection}
+              onRetry={retryPage}
+              onPreview={setSelectedPageId}
+              onDownload={downloadSingleImage}
+            />
+          )}
+          <footer className="border-t border-gray-200 dark:border-gray-800 py-6 mt-8">
+            <div className="max-w-7xl mx-auto text-center text-sm text-gray-500 dark:text-gray-400">
+              <p>
+                免责声明：本工具仅供学习和个人使用。使用 AI 生成内容时请遵守相关法律法规和平台政策。
+              </p>
+            </div>
+          </footer>
+        </div>
       </main>
 
       <SettingsModal
@@ -287,14 +296,6 @@ function App() {
           </div>
         </div>
       )}
-
-      <footer className="border-t border-gray-200 dark:border-gray-800 py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>
-            免责声明：本工具仅供学习和个人使用。使用 AI 生成内容时请遵守相关法律法规和平台政策。
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

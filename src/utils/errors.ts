@@ -19,7 +19,7 @@ export const Errors = {
   API_KEY_INVALID: new AppError(
     'API Key format invalid',
     'ERR_API_KEY_INVALID',
-    'API Key 格式错误，应以 AIza 开头',
+    'API Key 格式错误',
     false
   ),
   API_KEY_EMPTY: new AppError(

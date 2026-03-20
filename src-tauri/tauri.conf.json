@@ -16,13 +16,15 @@
         "width": 1400,
         "height": 900,
         "minWidth": 1000,
-        "minHeight": 700,
+        "minHeight": 600,
         "center": true,
         "resizable": true,
+        "maximized": false,
         "fullscreen": false,
-        "transparent": false,
-        "decorations": true,
-        "visible": true
+        "transparent": true,
+        "decorations": false,
+        "visible": true,
+        "shadow": false
       }
     ],
     "security": {

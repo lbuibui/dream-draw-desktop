@@ -100,9 +100,9 @@ fn validate_api_key(api_key: &str) -> Result<(), String> {
         return Err("API Key 长度不能超过 100 字符".to_string());
     }
     
-    // 格式检查：必须以 AIza 开头
+    // 格式检查
     if !trimmed.starts_with("AIza") {
-        return Err("API Key 格式错误，应以 AIza 开头".to_string());
+        return Err("API Key 格式错误".to_string());
     }
     
     // 字符白名单：只允许字母、数字、下划线、连字符

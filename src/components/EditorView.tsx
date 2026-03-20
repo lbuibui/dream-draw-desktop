@@ -1,4 +1,5 @@
 import { Play, Square, FileText, Presentation, FolderArchive } from 'lucide-react';
+import { CustomSelect } from './CustomSelect';
 import { PageGrid } from './PageGrid';
 import { useTranslation } from '../i18n';
 import type { ProcessedPage } from '../types';
@@ -62,15 +63,15 @@ export function EditorView({
       <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-300">{t.resolution}:</span>
-          <select
+          <CustomSelect
             value={config.resolution}
-            onChange={(e) => onResolutionChange(e.target.value as ResolutionType)}
+            options={[
+              { value: '2K', label: t.res2k },
+              { value: '4K', label: t.res4k },
+            ]}
+            onChange={(value) => onResolutionChange(value as ResolutionType)}
             disabled={isProcessing}
-            className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
-          >
-            <option value="2K">{t.res2k}</option>
-            <option value="4K">{t.res4k}</option>
-          </select>
+          />
         </div>
 
         <div className="flex-1" />

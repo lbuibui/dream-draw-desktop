@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { CustomSelect } from '../CustomSelect';
 import { useTranslation } from '../../i18n';
 import { validateApiKey, sanitizeInput } from '../../utils/errors';
 import type { LanguageType, ThemeType } from '../../constants';
@@ -99,26 +100,26 @@ export function SettingsModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-300">{t.language}</span>
-              <select
+              <CustomSelect
                 value={config.language}
-                onChange={(e) => onUpdateConfig({ language: e.target.value as LanguageType })}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 appearance-none cursor-pointer min-w-[100px]"
-              >
-                <option value="cn" className="text-gray-900 dark:text-gray-900">中文</option>
-                <option value="en" className="text-gray-900 dark:text-gray-900">English</option>
-              </select>
+                options={[
+                  { value: 'cn', label: '中文' },
+                  { value: 'en', label: 'English' },
+                ]}
+                onChange={(value) => onUpdateConfig({ language: value as LanguageType })}
+              />
             </div>
             
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-300">{t.theme}</span>
-              <select
+              <CustomSelect
                 value={config.theme}
-                onChange={(e) => onUpdateConfig({ theme: e.target.value as ThemeType })}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 appearance-none cursor-pointer min-w-[100px]"
-              >
-                <option value="light" className="text-gray-900 dark:text-gray-900">{t.light}</option>
-                <option value="dark" className="text-gray-900 dark:text-gray-900">{t.dark}</option>
-              </select>
+                options={[
+                  { value: 'light', label: t.light },
+                  { value: 'dark', label: t.dark },
+                ]}
+                onChange={(value) => onUpdateConfig({ theme: value as ThemeType })}
+              />
             </div>
           </div>
         </div>
