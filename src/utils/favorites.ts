@@ -8,15 +8,16 @@ export interface FavoriteItem {
   createdAt: Date;
   pageCount: number;
   resolution: '2K' | '4K';
+  pageIndex: number; // 原始顺序索引，用于保持与上传顺序一致
 }
 
 class FavoritesDatabase extends Dexie {
   favorites!: Table<FavoriteItem>;
 
   constructor() {
-    super('DreamDrawFavorites');
+    super('dream-draw-desktop-favorites');
     this.version(1).stores({
-      favorites: '++id, createdAt, name',
+      favorites: '++id, createdAt, name, pageIndex',
     });
   }
 }
@@ -53,7 +54,8 @@ export async function saveToFavorites(
   name: string,
   imageData: string,
   resolution: '2K' | '4K' = '2K',
-  pageCount: number = 1
+  pageCount: number = 1,
+  pageIndex: number = 0
 ): Promise<number> {
   const thumbnailData = await generateThumbnail(imageData);
   
@@ -64,14 +66,15 @@ export async function saveToFavorites(
     createdAt: new Date(),
     pageCount,
     resolution,
+    pageIndex,
   });
   
   return id;
 }
 
-// 获取所有收藏
+// 获取所有收藏 - 按 pageIndex 排序以保持与上传顺序一致
 export async function getAllFavorites(): Promise<FavoriteItem[]> {
-  return await db.favorites.orderBy('createdAt').reverse().toArray();
+  return await db.favorites.orderBy('pageIndex').toArray();
 }
 
 // 获取单个收藏

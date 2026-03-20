@@ -320,7 +320,7 @@ fn get_app_version() -> String {
 
 #[tauri::command]
 fn get_app_name() -> String {
-    "绘梦".to_string()
+    "dream-draw-desktop".to_string()
 }
 
 #[tauri::command]
@@ -332,8 +332,8 @@ fn is_dev() -> bool {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             select_save_directory,

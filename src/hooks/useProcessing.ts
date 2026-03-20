@@ -91,7 +91,8 @@ export function useProcessing(
             `修复页面 ${page.pageIndex + 1} - ${new Date().toLocaleString()}`,
             processedUrl,
             resolution,
-            1
+            1,
+            page.pageIndex
           );
           console.log(`[Page ${page.pageIndex + 1}] 已保存到收藏夹`);
         } catch (e) {
@@ -158,7 +159,8 @@ export function useProcessing(
             `修复页面 ${page.pageIndex + 1} - ${new Date().toLocaleString()}`,
             processedUrl,
             resolution,
-            1
+            1,
+            page.pageIndex
           );
         }
       } catch (e) {

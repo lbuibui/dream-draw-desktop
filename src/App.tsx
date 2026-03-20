@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import './App.css';
 import { Loader2 } from 'lucide-react';
 import { 
   Header, 
@@ -18,7 +19,7 @@ import { FavoriteItem, getAllFavorites, deleteFavorite, getFavoritesCount } from
 import { validateApiKey, sanitizeInput } from './utils/errors';
 import { saveApiKeySecure } from './tauri-api';
 import type { ResolutionType } from './constants';
-import './App.css';
+
 
 function App() {
   const { config, loading: configLoading, updateConfig, setApiKey } = useConfig();

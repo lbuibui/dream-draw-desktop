@@ -1,24 +1,30 @@
-# 绘梦桌面版 (Dream Draw Desktop)
+# dream-draw-desktop
 
-基于 Tauri v2 + React + TypeScript 开发的 AI 图像修复桌面应用。
+基于 Tauri v2 + React 19 + TypeScript 开发的 AI 图像修复桌面应用。
 
 ## ✨ 特性
 
 - **AI 图像修复**: 使用 Google Gemini API 进行超清重绘和文字纠错
-- **PDF 处理**: 支持 PDF 文档逐页提取和修复
+- **PDF 处理**: 支持 PDF 文档逐页提取和修复（最多 100 页）
+- **多图上传**: 支持批量上传图片文件（PNG、JPEG、WebP，单文件最大 10MB）
 - **多格式导出**: 支持导出为 PDF、PPTX 和 ZIP
 - **安全存储**: API Key 使用系统密钥库加密存储
-- **深色模式**: 支持浅色/深色主题切换，自适应系统主题
+- **深色模式**: 支持浅色/深色/系统主题切换
 - **双语支持**: 支持中文/英文界面
-- **快捷键支持**: Ctrl+O(打开)、Ctrl+S(导出)、Ctrl+A(全选)、Ctrl+,(设置)
+- **快捷键支持**: 
+  - `Ctrl+O` / `⌘+O`: 打开文件
+  - `Ctrl+A` / `⌘+A`: 全选页面
+  - `Ctrl+,` / `⌘+,`: 打开设置
 - **收藏夹**: 自动保存修复完成的图片，支持批量导出
 - **导出进度**: 大文件导出时显示实时进度
+- **失败重试**: 自动重试机制（最多 3 次，指数退避）
 
 ## 🛠️ 技术栈
 
-- **前端**: React 19 + TypeScript + Tailwind CSS
+- **前端**: React 19 + TypeScript + Tailwind CSS + Framer Motion
 - **后端**: Rust + Tauri v2
 - **AI**: Google Gemini 3.1 Flash Image Preview
+- **数据库**: Dexie (IndexedDB) - 用于收藏夹本地存储
 - **PDF**: PDF.js + jsPDF
 - **PPTX**: PptxGenJS
 - **安全**: keyring (系统密钥库)
@@ -71,14 +77,25 @@ dream-draw-desktop/
 │   │       ├── FavoritesModal.tsx
 │   │       └── ImagePreviewModal.tsx
 │   ├── hooks/             # React Hooks
+│   │   ├── useConfig.ts   # 配置管理
+│   │   ├── useFiles.ts    # 文件/PDF 处理
+│   │   ├── useProcessing.ts # AI 处理逻辑
+│   │   ├── useExportProgress.ts # 导出进度
+│   │   └── useKeyboardShortcuts.ts # 快捷键
 │   ├── contexts/          # React Context
 │   ├── constants/         # 常量定义
+│   │   └── index.ts       # 配置常量、限制、快捷键等
 │   ├── utils/             # 工具函数
+│   │   ├── export.ts      # 导出功能 (PDF/PPTX/ZIP)
+│   │   ├── favorites.ts   # 收藏夹管理
+│   │   └── errors.ts      # 错误处理与验证
 │   ├── services/          # 服务层
-│   ├── types.ts           # TypeScript 类型
-│   └── i18n.ts            # 国际化
+│   │   └── geminiService.ts # Gemini API 封装
+│   ├── types.ts           # TypeScript 类型定义
+│   ├── i18n.ts            # 国际化
+│   └── tauri-api.ts       # Tauri 命令封装
 ├── src-tauri/             # Rust 后端代码
-│   ├── src/lib.rs         # 主库文件
+│   ├── src/lib.rs         # 主库文件（命令实现）
 │   ├── capabilities/      # 权限配置
 │   └── Cargo.toml         # Rust 依赖
 └── package.json
@@ -94,19 +111,33 @@ dream-draw-desktop/
 
 > **注意**: API Key 使用系统密钥库加密存储，不会上传到任何服务器。
 
+### 支持的文件格式
+
+| 类型 | 格式 | 限制 |
+|------|------|------|
+| 图片 | PNG, JPEG, WebP | 单文件最大 10MB |
+| PDF | PDF | 最多 100 页 |
+
 ### 快捷键
 
-| 快捷键 | 功能 |
-|--------|------|
-| Ctrl+O / ⌘+O | 打开文件 |
-| Ctrl+S / ⌘+S | 导出文件 |
-| Ctrl+A / ⌘+A | 全选 |
-| Ctrl+, / ⌘+, | 打开设置 |
+| 快捷键 | 功能 | 条件 |
+|--------|------|------|
+| `Ctrl+O` / `⌘+O` | 打开文件 | 未加载文件时 |
+| `Ctrl+A` / `⌘+A` | 全选页面 | 已加载文件且未处理中 |
+| `Ctrl+,` / `⌘+,` | 打开设置 | 随时 |
 
 ### 分辨率选项
 
-- **2K (快速)**: 消耗较少 Token，处理速度快
-- **4K (极致)**: 最高画质，消耗更多 Token
+| 选项 | 尺寸 | 说明 |
+|------|------|------|
+| 2K (快速) | 2048×2048 | 消耗较少 Token，处理速度快 |
+| 4K (极致) | 4096×4096 | 最高画质，消耗更多 Token |
+
+### 主题选项
+
+- **浅色**: 明亮界面
+- **深色**: 暗色界面
+- **系统**: 跟随系统主题设置
 
 ## 🔧 开发指南
 
@@ -159,8 +190,8 @@ npm run tauri add <plugin-name>
 
 ```json
 {
-  "productName": "DreamDraw",
-  "version": "2.4.1",
+  "productName": "dream-draw-desktop",
+  "version": "2.4.2",
   "identifier": "com.dreamdraw.app"
 }
 ```
@@ -174,10 +205,25 @@ npm run tauri add <plugin-name>
 - `icon.icns` (macOS)
 - `icon.ico` (Windows)
 
+## 🔐 安全说明
+
+### API Key 存储
+
+- 优先使用系统密钥库存储（Windows: Credential Manager, macOS: Keychain, Linux: Secret Service）
+- 降级方案：使用 Tauri Store 插件本地存储
+- API Key 格式验证：必须以 `AIza` 开头，长度不超过 100 字符
+
+### 输入验证
+
+- 文件名消毒处理，防止路径遍历攻击
+- 文件类型白名单校验
+- 文件大小限制
+
 ## 📝 已知问题
 
 1. **PDF.js Worker**: 首次加载需要从 CDN 下载 worker，可能需要翻墙
 2. **Gemini API**: 需要有效的 API Key 且可能需要特定地区网络
+3. **Linux 密钥库**: 某些 Linux 发行版可能需要手动安装 `libsecret`
 
 ## 📄 许可证
 

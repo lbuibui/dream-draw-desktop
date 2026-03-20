@@ -2,7 +2,7 @@ import { TranslationKeys, Language } from './types';
 
 export const TRANSLATIONS: Record<Language, TranslationKeys> = {
   cn: {
-    title: "绘梦",
+    title: "dream-draw-desktop",
     subtitle: "幻灯片 & 信息图修复专家",
     description: "专为修复文档与信息图中的文字模糊与伪影问题而设计。一键还原清晰画质，支持导出 PDF 与 PPTX。",
     uploadTitle: "上传文档或图片",
@@ -44,7 +44,7 @@ export const TRANSLATIONS: Record<Language, TranslationKeys> = {
     save: '确认并保存',
     getKey: '获取 API 密钥',
     tip: '* 您的 API Key 仅存储在本地，不会上传到任何服务器。',
-    copyright: "© 2026 绘梦.",
+    copyright: "© 2026 dream-draw-desktop.",
     builtBy: "由 惊蛰 设计与开发。",
     rights: "保留所有权利。",
     privacy: "隐私政策",
