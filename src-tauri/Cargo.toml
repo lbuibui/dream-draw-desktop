@@ -1,6 +1,6 @@
 [package]
 name = "dream-draw-desktop"
-version = "2.4.0"
+version = "2.4.1"
 description = "绘梦 - AI 图像修复工具"
 authors = ["惊蛰"]
 edition = "2021"
